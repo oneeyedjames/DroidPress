@@ -17,8 +17,8 @@ import com.droidpress.os.Executable;
 public abstract class ContentObject implements ContentSchema.BaseColumns {
 	private static final String TAG = "ContentObject";
 
-	public static final int LOAD_METHOD_CLEAR = 0x01;
-	public static final int LOAD_METHOD_MERGE = 0x02;
+	public static final int LOAD_REPLACE = 0x01;
+	public static final int LOAD_MERGE   = 0x02;
 
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
@@ -82,6 +82,12 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		URI;
 	}
 
+	public interface UriBuilder {
+		public Uri build();
+		public Uri build(long id);
+		public Uri build(String slug);
+	}
+
 	protected static Uri withAppendedPath(Uri uri, String path) {
 		return uri.buildUpon().appendPath(path).build();
 	}
@@ -105,13 +111,13 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	}
 
 	public ContentObject loadCursor(Cursor cursor) {
-		return loadCursor(cursor, LOAD_METHOD_CLEAR);
+		return loadCursor(cursor, LOAD_REPLACE);
 	}
 
-	public ContentObject loadCursor(Cursor cursor, int loadMethod) {
+	public ContentObject loadCursor(Cursor cursor, int mode) {
 		if (cursor != null && !cursor.isClosed()) {
-			switch (loadMethod) {
-			case LOAD_METHOD_CLEAR:
+			switch (mode) {
+			case LOAD_REPLACE:
 				mValues.clear();
 				break;
 			}
@@ -160,23 +166,19 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	}
 
 	public ContentObject loadValues(ContentValues values) {
-		return loadValues(values, LOAD_METHOD_MERGE);
+		return loadValues(values, LOAD_MERGE);
 	}
 
-	public ContentObject loadValues(ContentValues values, int loadMethod) {
-		switch (loadMethod) {
-		case LOAD_METHOD_CLEAR:
+	public ContentObject loadValues(ContentValues values, int mode) {
+		switch (mode) {
+		case LOAD_REPLACE:
 			mValues = values;
 			break;
-		case LOAD_METHOD_MERGE:
+		case LOAD_MERGE:
 			mValues.putAll(values);
 			break;
 		}
 		return this;
-	}
-
-	public Context getContext() {
-		return mContext;
 	}
 
 	public ContentValues getValues() {
@@ -221,10 +223,14 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	}
 
 	public Uri save() {
+		beforeSave();
+
 		if (getId() > 0)
 			update();
 		else
 			insert();
+
+		afterSave();
 
 		return getItemUri();
 	}
@@ -233,12 +239,12 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		if (Thread.currentThread().getId() == 1)
 			Log.w(TAG, "Inserting on main thread.");
 
-		beforeSave();
+		beforeInsert();
 
 		Uri uri = mContext.getContentResolver()
 				.insert(getInsertUri(), getValues());
 
-		afterSave();
+		afterInsert();
 
 		put(_ID, Long.parseLong(uri.getPathSegments().get(1)));
 
@@ -249,12 +255,12 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		if (Thread.currentThread().getId() == 1)
 			Log.w(TAG, "Updating on main thread.");
 
-		beforeSave();
+		beforeUpdate();
 
 		int count = mContext.getContentResolver()
 				.update(getItemUri(), getValues(), null, null);
 
-		afterSave();
+		afterUpdate();
 
 		return count;
 	}
@@ -263,10 +269,14 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		if (Thread.currentThread().getId() == 1)
 			Log.w(TAG, "Deleting on main thread.");
 
+		beforeDelete();
+
 		int count = mContext.getContentResolver()
 				.delete(getItemUri(), null, null);
 
 		put(_ID, 0);
+
+		afterDelete();
 
 		return count;
 	}
@@ -296,11 +306,18 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	}
 
 	protected void beforeSave() {}
-
 	protected void afterSave() {}
 
-	protected abstract UriBuilder getUriBuilder();
+	protected void beforeInsert() {}
+	protected void afterInsert() {}
 
+	protected void beforeUpdate() {}
+	protected void afterUpdate() {}
+
+	protected void beforeDelete() {}
+	protected void afterDelete() {}
+
+	protected abstract UriBuilder getUriBuilder();
 	protected abstract UriBuilder getItemUriBuilder();
 
 	public Uri getUri() {
@@ -311,23 +328,27 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		return getItemUriBuilder().build(getId());
 	}
 
+	/**
+	 * Defaults to base URI. Child classes may override with nested URI.
+	 * 
+	 * @return URI to be used with INSERT action on ContentProvider.
+	 */
 	public Uri getInsertUri() {
 		return getUri();
 	}
 
+	@Override
 	public long getId() {
 		return getLong(_ID);
 	}
 
+	@Override
 	public void setId(long id) {
 		put(_ID, id);
 	}
 
-	public interface UriBuilder {
-		public Uri build();
-		public Uri build(long id);
-		public Uri build(String slug);
-	}
+
+	/* Low-level content accessors */
 
 	protected boolean getBoolean(String key) {
 		return getBoolean(key, false);
@@ -409,6 +430,11 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		return mValues.containsKey(key) ? Uri.parse(getString(key)) : defValue;
 	}
 
+	/* End low-level content accessors */
+
+
+	/* Low-level content mutators */
+
 	protected ContentObject put(String key, boolean value) {
 		mValues.put(key, value);
 		return this;
@@ -458,4 +484,6 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		put(key, value.toString());
 		return this;
 	}
+
+	/* End low-level content mutators */
 }

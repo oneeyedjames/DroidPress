@@ -11,22 +11,17 @@ import android.net.Uri;
 
 import com.droidpress.content.ContentSchema.CommentColumns;
 
-public abstract class CommentContentObject extends PostedContentObject
+public abstract class CommentContentObject extends AuthoredContentObject
 implements CommentColumns {
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
 	static {
-		sFieldTypeMap = new HashMap<String, FieldType>(ContentObject.sFieldTypeMap);
+		sFieldTypeMap = new HashMap<String, FieldType>(AuthoredContentObject.sFieldTypeMap);
 		sFieldTypeMap.put(_PARENT_ID, FieldType.LONG);
 		sFieldTypeMap.put(_REMOTE_PARENT_ID, FieldType.LONG);
 		sFieldTypeMap.put(_POST_ID, FieldType.LONG);
 		sFieldTypeMap.put(_REMOTE_POST_ID, FieldType.LONG);
-		sFieldTypeMap.put(_AUTHOR_ID, FieldType.LONG);
-		sFieldTypeMap.put(_REMOTE_AUTHOR_ID, FieldType.LONG);
 		sFieldTypeMap.put(CONTENT, FieldType.STRING);
-		sFieldTypeMap.put(PUB_DATE, FieldType.DATE);
-		sFieldTypeMap.put(MOD_DATE, FieldType.DATE);
-		sFieldTypeMap.put(STATUS, FieldType.STRING);
 	}
 
 	public CommentContentObject(Context context) {

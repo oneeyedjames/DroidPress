@@ -6,20 +6,21 @@ import android.net.Uri;
 
 public interface ContentSchema {
 	public static final String SCHEME = "content";
+	public static final String AUTHORITY = "com.droidpress.content.contentprovider";
 
 	public interface BaseColumns extends android.provider.BaseColumns {
 		public static final String PATH_SEGMENT_CURRENT = "current";
 		public static final String PATH_SEGMENT_PREV    = "prev";
 		public static final String PATH_SEGMENT_NEXT    = "next";
+
+		public long getId();
+		public void setId(long id);
 	}
 
 	public interface RemoteColumns extends BaseColumns {
 		public static final String PATH_SEGMENT_REMOTE = "remote";
 
 		public static final String _REMOTE_ID = "_remote_id";
-
-		public long getId();
-		public void setId(long id);
 
 		public long getRemoteId();
 		public void setRemoteId(long remoteId);
@@ -72,10 +73,39 @@ public interface ContentSchema {
 		public void setModDate(Date modDate);
 	}
 
-	public interface PostColumns extends AuthoredColumns, EditableColumns {
+	public interface AuthorColumns extends RemoteColumns {
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.author";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.author";
+
+		public static final String TABLE_NAME = "authors";
+
+		public static final String NAME  = "name";
+		public static final String EMAIL = "email";
+		public static final String URL   = "url";
+
+		public String getName();
+		public void setName(String name);
+
+		public String getEmail();
+		public void setEmail(String email);
+
+		public Uri getUrl();
+		public void setUrl(Uri url);
+	}
+
+	public interface PostColumns extends AuthoredColumns, NestedColumns, EditableColumns {
+		public static final String PATH_SEGMENT = "posts";
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.post";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.post";
+
+		public static final String TABLE_NAME = PATH_SEGMENT;
+
 		public static final String COMMENT_STATUS        = "commentStatus";
 		public static final String COMMENT_STATUS_OPEN   = "open";
 		public static final String COMMENT_STATUS_CLOSED = "closed";
+
+		public static final String TYPE = "type";
 
 		public static final String TITLE = "title";
 
@@ -83,6 +113,9 @@ public interface ContentSchema {
 		public static final String CONTENT = "content";
 
 		public static final String PERMALINK = "permalink";
+
+		public String getType();
+		public void setType(String type);
 
 		public String getCommentStatus();
 		public void setCommentStatus(String commentStatus);
@@ -100,26 +133,21 @@ public interface ContentSchema {
 		public void setPermalink(Uri permalink);
 	}
 
-	public interface PageColumns extends PostColumns, NestedColumns {
+	/* public interface PageColumns extends PostColumns, NestedColumns {
+		public static final String PATH_SEGMENT = "pages";
 
-	}
-
-	public interface AuthorColumns extends RemoteColumns {
-		public static final String NAME  = "name";
-		public static final String EMAIL = "email";
-		public static final String URL   = "url";
-
-		public String getName();
-		public void setName(String name);
-
-		public String getEmail();
-		public void setEmail(String email);
-
-		public Uri getUrl();
-		public void setUrl(Uri url);
-	}
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.page";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.page";
+	} */
 
 	public interface CommentColumns extends AuthoredColumns, EditableColumns, NestedColumns {
+		public static final String PATH_SEGMENT = "comments";
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.comment";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.comment";
+
+		public static final String TABLE_NAME = PATH_SEGMENT;
+
 		public static final String STATUS_APPROVED   = "approved";
 		public static final String STATUS_UNAPPROVED = "unapproved";
 

@@ -10,22 +10,16 @@ import android.net.Uri;
 
 import com.droidpress.content.ContentSchema.PostColumns;
 
-public abstract class PostContentObject extends PostedContentObject
+public abstract class PostContentObject extends AuthoredContentObject
 implements PostColumns {
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
 	static {
-		sFieldTypeMap = new HashMap<String, FieldType>(ContentObject.sFieldTypeMap);
-		sFieldTypeMap.put(_REMOTE_ID, FieldType.LONG);
-		sFieldTypeMap.put(_AUTHOR_ID, FieldType.LONG);
-		sFieldTypeMap.put(_REMOTE_AUTHOR_ID, FieldType.LONG);
+		sFieldTypeMap = new HashMap<String, FieldType>(AuthoredContentObject.sFieldTypeMap);
 		sFieldTypeMap.put(TITLE, FieldType.STRING);
 		sFieldTypeMap.put(EXCERPT, FieldType.STRING);
 		sFieldTypeMap.put(CONTENT, FieldType.STRING);
 		sFieldTypeMap.put(PERMALINK, FieldType.URI);
-		sFieldTypeMap.put(PUB_DATE, FieldType.DATE);
-		sFieldTypeMap.put(MOD_DATE, FieldType.DATE);
-		sFieldTypeMap.put(STATUS, FieldType.STRING);
 		sFieldTypeMap.put(COMMENT_STATUS, FieldType.STRING);
 	}
 
@@ -43,6 +37,16 @@ implements PostColumns {
 
 	public boolean isPublished() {
 		return STATUS_PUBLISH.equals(getStatus());
+	}
+
+	@Override
+	public String getType() {
+		return getString(TYPE, "post");
+	}
+
+	@Override
+	public void setType(String type) {
+		put(TYPE, type);
 	}
 
 	@Override
