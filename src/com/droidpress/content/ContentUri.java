@@ -1,26 +1,62 @@
 package com.droidpress.content;
 
-import java.util.Arrays;
-import java.util.List;
-
 import android.content.UriMatcher;
 import android.net.Uri;
 
 import com.droidpress.content.ContentObject.UriBuilder;
-import com.droidpress.content.ContentProvider.SqlSelector;
 
-public enum ContentUri implements ContentSchema, UriBuilder, SqlSelector {
-	AUTHORS         (AuthorColumns.TABLE_NAME),
-	AUTHOR_ID       (AuthorColumns.TABLE_NAME + "/#", 1),
-	AUTHOR_POSTS    (AuthorColumns.TABLE_NAME + "/#/" + PostColumns.TABLE_NAME, 1, PostColumns._AUTHOR_ID),
-	AUTHOR_COMMENTS (AuthorColumns.TABLE_NAME + "/#/" + CommentColumns.TABLE_NAME, 1, CommentColumns._AUTHOR_ID),
+public enum ContentUri implements ContentSchema, UriBuilder {
+	AUTHORS      (AuthorColumns.CONTENT_URI),
+	AUTHORS_PAGE (AuthorColumns.CONTENT_PAGE_URI, -1, 2),
 
-	POSTS         (PostColumns.TABLE_NAME),
-	POST_ID       (PostColumns.TABLE_NAME + "/#", 1),
-	POST_COMMENTS (PostColumns.TABLE_NAME + "/#/" + CommentColumns.TABLE_NAME, 1, CommentColumns._POST_ID),
+	AUTHOR_ID     (AuthorColumns.CONTENT_ITEM_URI, 1),
+	AUTHOR_REMOTE (AuthorColumns.CONTENT_REMOTE_URI, 2),
 
-	COMMENTS   (CommentColumns.TABLE_NAME),
-	COMMENT_ID (CommentColumns.TABLE_NAME + "/#", 1);
+	AUTHOR_POSTS      (AuthorColumns.CONTENT_ITEM_URI + PostColumns.CONTENT_URI, 1),
+	AUTHOR_POSTS_PAGE (AuthorColumns.CONTENT_ITEM_URI + PostColumns.CONTENT_PAGE_URI, 1, 4),
+
+	AUTHOR_COMMENTS      (AuthorColumns.CONTENT_ITEM_URI + CommentColumns.CONTENT_URI, 1),
+	AUTHOR_COMMENTS_PAGE (AuthorColumns.CONTENT_ITEM_URI + CommentColumns.CONTENT_PAGE_URI, 1, 4),
+
+	POSTS        (PostColumns.CONTENT_URI),
+	POSTS_PAGE   (PostColumns.CONTENT_PAGE_URI, -1, 2),
+	POSTS_STATUS (PostColumns.CONTENT_STATUS_URI, 2),
+
+	POST_ID     (PostColumns.CONTENT_ITEM_URI, 1),
+	POST_REMOTE (PostColumns.CONTENT_REMOTE_URI, 2),
+
+	POST_COMMENTS      (PostColumns.CONTENT_ITEM_URI + CommentColumns.CONTENT_URI, 1),
+	POST_COMMENTS_PAGE (PostColumns.CONTENT_ITEM_URI + CommentColumns.CONTENT_PAGE_URI, 1, 4),
+
+	POST_TERMS      (PostColumns.CONTENT_ITEM_URI + TermColumns.CONTENT_URI, 1),
+	POST_TERMS_PAGE (PostColumns.CONTENT_ITEM_URI + TermColumns.CONTENT_PAGE_URI, 1, 4),
+
+	POST_TAXONOMY_TERMS (PostColumns.CONTENT_ITEM_URI + TaxonomyColumns.CONTENT_ITEM_URI + TermColumns.CONTENT_URI, 1),
+
+	COMMENTS        (CommentColumns.CONTENT_URI),
+	COMMENTS_PAGE   (CommentColumns.CONTENT_PAGE_URI, -1, 2),
+	COMMENTS_STATUS (CommentColumns.CONTENT_STATUS_URI, 2),
+
+	COMMENT_ID     (CommentColumns.CONTENT_ITEM_URI, 1),
+	COMMENT_REMOTE (CommentColumns.CONTENT_REMOTE_URI, 2),
+
+	TAXONOMIES      (TaxonomyColumns.CONTENT_URI),
+	TAXONOMIES_PAGE (TaxonomyColumns.CONTENT_PAGE_URI, -1, 2),
+
+	TAXONOMY_ID     (TaxonomyColumns.CONTENT_ITEM_URI, 1),
+	TAXONOMY_REMOTE (TaxonomyColumns.CONTENT_REMOTE_URI, 2),
+
+	TAXONOMY_TERMS      (TaxonomyColumns.CONTENT_ITEM_URI + TermColumns.CONTENT_URI, 1),
+	TAXONOMY_TERMS_PAGE (TaxonomyColumns.CONTENT_ITEM_URI + TermColumns.CONTENT_PAGE_URI, 1, 4),
+
+	TERMS      (TermColumns.CONTENT_URI),
+	TERMS_PAGE (TermColumns.CONTENT_PAGE_URI, -1, 2),
+
+	TERM_ID     (TermColumns.CONTENT_ITEM_URI, 1),
+	TERM_REMOTE (TermColumns.CONTENT_REMOTE_URI, 2),
+
+	TERM_POSTS      (TermColumns.CONTENT_ITEM_URI + PostColumns.CONTENT_URI, 1),
+	TERM_POSTS_PAGE (TermColumns.CONTENT_ITEM_URI + PostColumns.CONTENT_PAGE_URI, 1, 4);
 
 	private static final Uri sBaseUri;
 
@@ -43,21 +79,21 @@ public enum ContentUri implements ContentSchema, UriBuilder, SqlSelector {
 	}
 
 	public final String path;
-	public final int idPathPosition;
-	public final String foreignKey;
+	public final int keyPathPosition;
+	public final int pagePathPosition;
 
 	private ContentUri(String path) {
 		this(path, -1);
 	}
 
-	private ContentUri(String path, int idPathPosition) {
-		this(path, idPathPosition, null);
+	private ContentUri(String path, int keyPathPosition) {
+		this(path, keyPathPosition, -1);
 	}
 
-	private ContentUri(String path, int idPathPosition, String foreignKey) {
+	private ContentUri(String path, int keyPathPosition, int pagePathPosition) {
 		this.path = path;
-		this.idPathPosition = idPathPosition;
-		this.foreignKey = foreignKey;
+		this.keyPathPosition  = keyPathPosition;
+		this.pagePathPosition = pagePathPosition;
 
 		addToMatcher();
 	}
@@ -66,8 +102,26 @@ public enum ContentUri implements ContentSchema, UriBuilder, SqlSelector {
 		sUriMatcher.addURI(AUTHORITY, path, ordinal());
 	}
 
-	private List<String> getPathSegments() {
-		return Arrays.asList(path.split("\\/"));
+	public boolean matches(Uri uri) {
+		return sUriMatcher.match(uri) == ordinal();
+	}
+
+	public long getId(Uri uri) {
+		return Long.parseLong(getSlug(uri));
+	}
+
+	public String getSlug(Uri uri) {
+		if (!matches(uri) || keyPathPosition < 0)
+			return null;
+
+		return uri.getPathSegments().get(keyPathPosition);
+	}
+
+	public int getPage(Uri uri) {
+		if (!matches(uri) || pagePathPosition < 0)
+			return 0;
+
+		return Integer.parseInt(uri.getPathSegments().get(pagePathPosition));
 	}
 
 	@Override
@@ -77,41 +131,13 @@ public enum ContentUri implements ContentSchema, UriBuilder, SqlSelector {
 
 	@Override
 	public Uri build(long id) {
-		// TODO Auto-generated method stub
-		return null;
+		String path = this.path.replaceFirst("#", id + "");
+		return sBaseUri.buildUpon().appendEncodedPath(path).build();
 	}
 
 	@Override
 	public Uri build(String slug) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	@Override
-	public String getTableName() {
-		List<String> segs = getPathSegments();
-
-		if (idPathPosition >= 0 && foreignKey != null)
-			return segs.get(idPathPosition + 1);
-		else
-			return segs.get(0);
-	}
-
-	@Override
-	public String getSelection() {
-		if (idPathPosition < 0)
-			return null;
-
-		String field = foreignKey == null ? BaseColumns._ID : foreignKey;
-
-		return getTableName() + "." + field + " = ?";
-	}
-
-	@Override
-	public String[] getSelectionArgs(Uri uri) {
-		if (idPathPosition < 0)
-			return null;
-
-		return new String[] { uri.getPathSegments().get(idPathPosition) };
+		String path = this.path.replaceFirst("*", slug);
+		return sBaseUri.buildUpon().appendEncodedPath(path).build();
 	}
 }

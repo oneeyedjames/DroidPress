@@ -9,16 +9,17 @@ public interface ContentSchema {
 	public static final String AUTHORITY = "com.droidpress.content.contentprovider";
 
 	public interface BaseColumns extends android.provider.BaseColumns {
-		public static final String PATH_SEGMENT_CURRENT = "current";
-		public static final String PATH_SEGMENT_PREV    = "prev";
-		public static final String PATH_SEGMENT_NEXT    = "next";
+		public static final String CURRENT = "current";
+		public static final String PREV    = "prev";
+		public static final String NEXT    = "next";
+		public static final String PAGE    = "page";
 
 		public long getId();
 		public void setId(long id);
 	}
 
 	public interface RemoteColumns extends BaseColumns {
-		public static final String PATH_SEGMENT_REMOTE = "remote";
+		public static final String REMOTE = "remote";
 
 		public static final String _REMOTE_ID = "_remote_id";
 
@@ -63,8 +64,6 @@ public interface ContentSchema {
 	}
 
 	public interface EditableColumns extends ReadableColumns {
-		public static final String PATH_SEGMENT_PENDING = "pending";
-
 		public static final String STATUS_PENDING = "pending";
 
 		public static final String MOD_DATE = "modDate";
@@ -74,14 +73,22 @@ public interface ContentSchema {
 	}
 
 	public interface AuthorColumns extends RemoteColumns {
-		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.author";
-		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.author";
-
 		public static final String TABLE_NAME = "authors";
 
 		public static final String NAME  = "name";
 		public static final String EMAIL = "email";
 		public static final String URL   = "url";
+
+		public static final String SORT_ORDER = NAME + " ASC";
+		public static final int PAGE_LIMIT = 10;
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.author";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.author";
+
+		public static final String CONTENT_URI        = "/" + TABLE_NAME;
+		public static final String CONTENT_PAGE_URI   = "/" + TABLE_NAME + "/" + PAGE + "/#";
+		public static final String CONTENT_ITEM_URI   = "/" + TABLE_NAME + "/#";
+		public static final String CONTENT_REMOTE_URI = "/" + TABLE_NAME + "/" + REMOTE + "/#";
 
 		public String getName();
 		public void setName(String name);
@@ -94,18 +101,10 @@ public interface ContentSchema {
 	}
 
 	public interface PostColumns extends AuthoredColumns, NestedColumns, EditableColumns {
-		public static final String PATH_SEGMENT = "posts";
-
-		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.post";
-		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.post";
-
-		public static final String TABLE_NAME = PATH_SEGMENT;
-
-		public static final String COMMENT_STATUS        = "commentStatus";
-		public static final String COMMENT_STATUS_OPEN   = "open";
-		public static final String COMMENT_STATUS_CLOSED = "closed";
+		public static final String TABLE_NAME = "posts";
 
 		public static final String TYPE = "type";
+		public static final String TYPE_DEFAULT = "post";
 
 		public static final String TITLE = "title";
 
@@ -114,11 +113,24 @@ public interface ContentSchema {
 
 		public static final String PERMALINK = "permalink";
 
+		public static final String COMMENT_STATUS        = "commentStatus";
+		public static final String COMMENT_STATUS_OPEN   = "open";
+		public static final String COMMENT_STATUS_CLOSED = "closed";
+
+		public static final String SORT_ORDER = PUB_DATE + " DESC";
+		public static final int PAGE_LIMIT = 10;
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.post";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.post";
+
+		public static final String CONTENT_URI        = "/" + TABLE_NAME;
+		public static final String CONTENT_PAGE_URI   = "/" + TABLE_NAME + "/" + PAGE + "/#";
+		public static final String CONTENT_ITEM_URI   = "/" + TABLE_NAME + "/#";
+		public static final String CONTENT_REMOTE_URI = "/" + TABLE_NAME + "/" + REMOTE + "/#";
+		public static final String CONTENT_STATUS_URI = "/" + TABLE_NAME + "/" + STATUS + "/*";
+
 		public String getType();
 		public void setType(String type);
-
-		public String getCommentStatus();
-		public void setCommentStatus(String commentStatus);
 
 		public String getTitle();
 		public void setTitle(String title);
@@ -131,22 +143,13 @@ public interface ContentSchema {
 
 		public Uri getPermalink();
 		public void setPermalink(Uri permalink);
+
+		public String getCommentStatus();
+		public void setCommentStatus(String commentStatus);
 	}
 
-	/* public interface PageColumns extends PostColumns, NestedColumns {
-		public static final String PATH_SEGMENT = "pages";
-
-		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.page";
-		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.page";
-	} */
-
-	public interface CommentColumns extends AuthoredColumns, EditableColumns, NestedColumns {
-		public static final String PATH_SEGMENT = "comments";
-
-		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.comment";
-		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.comment";
-
-		public static final String TABLE_NAME = PATH_SEGMENT;
+	public interface CommentColumns extends AuthoredColumns, NestedColumns, EditableColumns {
+		public static final String TABLE_NAME = "comments";
 
 		public static final String STATUS_APPROVED   = "approved";
 		public static final String STATUS_UNAPPROVED = "unapproved";
@@ -156,6 +159,18 @@ public interface ContentSchema {
 
 		public static final String CONTENT = "content";
 
+		public static final String SORT_ORDER = PUB_DATE + " DESC";
+		public static final int PAGE_LIMIT = 25;
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.comment";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.comment";
+
+		public static final String CONTENT_URI        = "/" + TABLE_NAME;
+		public static final String CONTENT_PAGE_URI   = "/" + TABLE_NAME + "/" + PAGE + "/#";
+		public static final String CONTENT_ITEM_URI   = "/" + TABLE_NAME + "/#";
+		public static final String CONTENT_REMOTE_URI = "/" + TABLE_NAME + "/" + REMOTE + "/#";
+		public static final String CONTENT_STATUS_URI = "/" + TABLE_NAME + "/" + STATUS + "/*";
+
 		public long getPostId();
 		public void setPostId(long postId);
 
@@ -164,5 +179,60 @@ public interface ContentSchema {
 
 		public String getContent();
 		public void setContent(String content);
+	}
+
+	public interface TaxonomyColumns extends RemoteColumns {
+		public static final String TABLE_NAME = "taxonomies";
+
+		public static final String TITLE = "title";
+
+		public static final String HIERARCHICAL = "hierarchical";
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.taxonomy";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.taxonomy";
+
+		public static final String CONTENT_URI        = "/" + TABLE_NAME;
+		public static final String CONTENT_PAGE_URI   = "/" + TABLE_NAME + "/" + PAGE + "/#";
+		public static final String CONTENT_ITEM_URI   = "/" + TABLE_NAME + "/#";
+		public static final String CONTENT_REMOTE_URI = "/" + TABLE_NAME + "/" + REMOTE + "/#";
+
+		public String getTitle();
+		public void setTitle(String title);
+
+		public boolean isHierarchical();
+		public void setHierarchical(boolean hierarchical);
+	}
+
+	public interface TermColumns extends NestedColumns {
+		public static final String TABLE_NAME = "terms";
+
+		public static final String _TAXONOMY_ID = "_taxonomy_id";
+		public static final String _REMOTE_TAXONOMY_ID = "_remote_taxonomy_id";
+
+		public static final String TITLE = "title";
+
+		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.term";
+		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.term";
+
+		public static final String CONTENT_URI        = "/" + TABLE_NAME;
+		public static final String CONTENT_PAGE_URI   = "/" + TABLE_NAME + "/" + PAGE + "/#";
+		public static final String CONTENT_ITEM_URI   = "/" + TABLE_NAME + "/#";
+		public static final String CONTENT_REMOTE_URI = "/" + TABLE_NAME + "/" + REMOTE + "/#";
+
+		public long getTaxonomyId();
+		public void setTaxonomyId(long taxonomyId);
+
+		public long getRemoteTaxonomyId();
+		public void setRemoteTaxonomyId(long remoteTaxonomyId);
+
+		public String getTitle();
+		public void setTitle(String title);
+	}
+
+	public interface PostTermColumns {
+		public static final String TABLE_NAME = "postTerms";
+
+		public static final String _POST_ID = "_post_id";
+		public static final String _TERM_ID = "_term_id";
 	}
 }

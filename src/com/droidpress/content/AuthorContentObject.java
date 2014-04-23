@@ -10,7 +10,7 @@ import android.net.Uri;
 
 import com.droidpress.content.ContentSchema.AuthorColumns;
 
-public abstract class AuthorContentObject extends ContentObject
+public class AuthorContentObject extends ContentObject
 implements AuthorColumns {
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
@@ -32,6 +32,16 @@ implements AuthorColumns {
 
 	public AuthorContentObject(Context context, Cursor cursor) {
 		super(context, cursor);
+	}
+
+	@Override
+	protected UriBuilder getUriBuilder() {
+		return ContentUri.AUTHORS;
+	}
+
+	@Override
+	protected UriBuilder getItemUriBuilder() {
+		return ContentUri.AUTHOR_ID;
 	}
 
 	@Override

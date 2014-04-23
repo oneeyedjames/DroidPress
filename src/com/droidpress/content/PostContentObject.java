@@ -10,7 +10,7 @@ import android.net.Uri;
 
 import com.droidpress.content.ContentSchema.PostColumns;
 
-public abstract class PostContentObject extends AuthoredContentObject
+public class PostContentObject extends AuthoredContentObject
 implements PostColumns {
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
@@ -35,13 +35,23 @@ implements PostColumns {
 		super(context);
 	}
 
+	@Override
+	protected UriBuilder getUriBuilder() {
+		return ContentUri.POSTS;
+	}
+
+	@Override
+	protected UriBuilder getItemUriBuilder() {
+		return ContentUri.POST_ID;
+	}
+
 	public boolean isPublished() {
 		return STATUS_PUBLISH.equals(getStatus());
 	}
 
 	@Override
 	public String getType() {
-		return getString(TYPE, "post");
+		return getString(TYPE, TYPE_DEFAULT);
 	}
 
 	@Override
