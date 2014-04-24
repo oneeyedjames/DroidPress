@@ -1,24 +1,37 @@
 package com.droidpress.content;
 
-import java.util.HashMap;
-
 import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
-import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 
 import com.droidpress.content.ContentObject.UriBuilder;
 import com.droidpress.content.ContentSchema.AuthorColumns;
 import com.droidpress.content.ContentSchema.CommentColumns;
 import com.droidpress.content.ContentSchema.PostColumns;
+import com.droidpress.content.ContentSchema.PostTermColumns;
 import com.droidpress.content.ContentSchema.TaxonomyColumns;
 import com.droidpress.content.ContentSchema.TermColumns;
+import com.droidpress.database.ProjectionMap;
+import com.droidpress.database.QueryBuilder;
 
 public class ContentProvider extends android.content.ContentProvider {
 	private static final String DATABASE_NAME = "droidpress.sqlite";
 	private static final int DATABASE_VERSION = 1;
+
+	private static final String POST_TERM_JOIN = PostTermColumns.TABLE_NAME
+			+ " INNER JOIN " + PostColumns.TABLE_NAME + " ON "
+			+ PostTermColumns.TABLE_NAME + "." + PostTermColumns._POST_ID
+			+ " = " + PostColumns.TABLE_NAME + "." + PostColumns._ID
+			+ " INNER JOIN " + PostColumns.TABLE_NAME + " ON "
+			+ PostTermColumns.TABLE_NAME + "." + PostTermColumns._TERM_ID
+			+ " = " + TermColumns.TABLE_NAME + "." + TermColumns._ID;
+
+	private static final String POST_TAXONOMY_JOIN = POST_TERM_JOIN
+			+ " INNER JOIN " + TaxonomyColumns.TABLE_NAME
+			+ " ON " + TaxonomyColumns.TABLE_NAME + "." + TaxonomyColumns._ID
+			+ " = " + TermColumns.TABLE_NAME + "." + TermColumns._TAXONOMY_ID;
 
 	private static final ProjectionMap sAuthorColumnMap;
 	private static final ProjectionMap sPostColumnMap;
@@ -145,9 +158,7 @@ public class ContentProvider extends android.content.ContentProvider {
 	@Override
 	public Cursor query(Uri uri, String[] projection, String selection,
 			String[] selectionArgs, String sortOrder) {
-		SQLiteQueryBuilder qb = new SQLiteQueryBuilder();
-
-		String queryLimit = null;
+		QueryBuilder qb = new QueryBuilder();
 
 		ContentUri contentUri = ContentUri.match(uri);
 
@@ -156,131 +167,137 @@ public class ContentProvider extends android.content.ContentProvider {
 		case AUTHORS_PAGE:
 			qb.setTables(AuthorColumns.TABLE_NAME);
 			qb.setProjectionMap(sAuthorColumnMap);
-
-			sortOrder = AuthorColumns.SORT_ORDER;
-
-			queryLimit = getQueryLimit(AuthorColumns.PAGE_LIMIT,
-					contentUri.getPage(uri));
-
+			qb.setSortOrder(sortOrder, AuthorColumns.SORT_ORDER);
+			qb.setPageLimit(AuthorColumns.PAGE_LIMIT);
 			break;
 		case AUTHOR_ID:
 			qb.setTables(AuthorColumns.TABLE_NAME);
 			qb.setProjectionMap(sAuthorColumnMap);
-
-			selection = AuthorColumns._ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(AuthorColumns._ID + " = ?");
 			break;
 		case AUTHOR_REMOTE:
 			qb.setTables(AuthorColumns.TABLE_NAME);
 			qb.setProjectionMap(sAuthorColumnMap);
-
-			selection = AuthorColumns._REMOTE_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(AuthorColumns._REMOTE_ID + " = ?");
 			break;
 		case AUTHOR_POSTS:
 		case AUTHOR_POSTS_PAGE:
-			selection = PostColumns._AUTHOR_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-		case TERM_POSTS:
-		case TERM_POSTS_PAGE:
-			// TODO not sure yet how to handle many-to-many relation
+			qb.setSelection(PostColumns._AUTHOR_ID + " = ?");
 		case POSTS:
 		case POSTS_PAGE:
 			qb.setTables(PostColumns.TABLE_NAME);
 			qb.setProjectionMap(sPostColumnMap);
-
-			sortOrder = PostColumns.SORT_ORDER;
-
-			queryLimit = getQueryLimit(PostColumns.PAGE_LIMIT,
-					contentUri.getPage(uri));
-
+			qb.setSortOrder(sortOrder, PostColumns.SORT_ORDER);
+			qb.setPageLimit(PostColumns.PAGE_LIMIT);
 			break;
 		case POST_ID:
 			qb.setTables(PostColumns.TABLE_NAME);
 			qb.setProjectionMap(sPostColumnMap);
-
-			selection = PostColumns._ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(PostColumns._ID + " = ?");
 			break;
 		case POST_REMOTE:
 			qb.setTables(PostColumns.TABLE_NAME);
 			qb.setProjectionMap(sPostColumnMap);
-
-			selection = PostColumns._REMOTE_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(PostColumns._REMOTE_ID + " = ?");
 			break;
 		case AUTHOR_COMMENTS:
 		case AUTHOR_COMMENTS_PAGE:
-			// TODO this will always be overridden by the post cases
-			selection = CommentColumns._AUTHOR_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
+			qb.setSelection(CommentColumns._AUTHOR_ID + " = ?");
 		case POST_COMMENTS:
 		case POST_COMMENTS_PAGE:
-			selection = CommentColumns._POST_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
+			if (!qb.hasSelection())
+				qb.setSelection(CommentColumns._POST_ID + " = ?");
 		case COMMENTS:
 		case COMMENTS_PAGE:
 			qb.setTables(CommentColumns.TABLE_NAME);
 			qb.setProjectionMap(sCommentColumnMap);
-
-			sortOrder = CommentColumns.SORT_ORDER;
-
-			queryLimit = getQueryLimit(CommentColumns.PAGE_LIMIT,
-					contentUri.getPage(uri));
-
+			qb.setSortOrder(sortOrder, CommentColumns.SORT_ORDER);
+			qb.setPageLimit(CommentColumns.PAGE_LIMIT);
 			break;
 		case COMMENT_ID:
 			qb.setProjectionMap(sCommentColumnMap);
 			qb.setTables(CommentColumns.TABLE_NAME);
-
-			selection = CommentColumns._ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(CommentColumns._ID + " = ?");
 			break;
 		case COMMENT_REMOTE:
 			qb.setProjectionMap(sCommentColumnMap);
 			qb.setTables(CommentColumns.TABLE_NAME);
-
-			selection = CommentColumns._REMOTE_ID + " = ?";
-			selectionArgs = new String[] { contentUri.getSlug(uri) };
-
-			queryLimit = "1";
-
+			qb.setSelection(CommentColumns._REMOTE_ID + " = ?");
 			break;
 		case TAXONOMIES:
+		case TAXONOMIES_PAGE:
+			qb.setTables(TaxonomyColumns.TABLE_NAME);
 			qb.setProjectionMap(sTaxonomyColumnMap);
+			qb.setSortOrder(sortOrder, TaxonomyColumns.SORT_ORDER);
+			qb.setPageLimit(TaxonomyColumns.PAGE_LIMIT);
 			break;
 		case TAXONOMY_ID:
+			qb.setTables(TaxonomyColumns.TABLE_NAME);
 			qb.setProjectionMap(sTaxonomyColumnMap);
+			qb.setSelection(TaxonomyColumns._ID + " = ?");
 			break;
+		case TAXONOMY_REMOTE:
+			qb.setTables(TaxonomyColumns.TABLE_NAME);
+			qb.setProjectionMap(sTaxonomyColumnMap);
+			qb.setSelection(TaxonomyColumns._REMOTE_ID + " = ?");
+			break;
+		case TAXONOMY_TERMS:
 		case TERMS:
+			qb.setTables(TermColumns.TABLE_NAME);
 			qb.setProjectionMap(sTermColumnMap);
+			qb.setSortOrder(sortOrder, TermColumns.SORT_ORDER);
+			qb.setPageLimit(TermColumns.PAGE_LIMIT);
 			break;
 		case TERM_ID:
+			qb.setTables(TermColumns.TABLE_NAME);
 			qb.setProjectionMap(sTermColumnMap);
+			qb.setSelection(TermColumns._ID + " = ?");
+			break;
+		case TERM_REMOTE:
+			qb.setTables(TermColumns.TABLE_NAME);
+			qb.setProjectionMap(sTermColumnMap);
+			qb.setSelection(TermColumns._REMOTE_ID + " = ?");
+			break;
+		case POST_TAXONOMY_TERMS:
+			qb.setTables(POST_TAXONOMY_JOIN);
+			qb.setProjectionMap(sTermColumnMap);
+			qb.setSelection(PostTermColumns._POST_ID + " + ?"
+					+ " AND " + TermColumns._TAXONOMY_ID + " = ?");
+			qb.setSelectionArgs(uri.getPathSegments().get(1),
+					uri.getPathSegments().get(3));
+			// TODO find a more refined way to get post id and taxonomy id
+			qb.setSortOrder(sortOrder, TermColumns.SORT_ORDER);
+			qb.setPageLimit(TermColumns.PAGE_LIMIT);
+			break;
+		case POST_TERMS:
+		case POST_TERMS_PAGE:
+			qb.setTables(POST_TERM_JOIN);
+			qb.setProjectionMap(sTermColumnMap);
+			qb.setSelection(PostTermColumns._POST_ID + " = ?");
+			qb.setSortOrder(sortOrder, TermColumns.SORT_ORDER);
+			qb.setPageLimit(TermColumns.PAGE_LIMIT);
+			break;
+		case TERM_POSTS:
+		case TERM_POSTS_PAGE:
+			qb.setTables(POST_TERM_JOIN);
+			qb.setProjectionMap(sPostColumnMap);
+			qb.setSelection(PostTermColumns._TERM_ID + " = ?");
+			qb.setSortOrder(sortOrder, PostColumns.SORT_ORDER);
+			qb.setPageLimit(PostColumns.PAGE_LIMIT);
 			break;
 		default:
 			throw new IllegalArgumentException("Illegal Content URI: " + uri);
 		}
 
-		SQLiteDatabase db = mDatabaseHelper.getReadableDatabase();
+		if (qb.hasSelection() && !qb.hasSelectionArgs())
+			qb.setSelectionArgs(contentUri.getSlug(uri));
 
-		Cursor cursor = qb.query(db, projection, selection, selectionArgs,
-				null, null, sortOrder, queryLimit);
+		qb.setPageOffset(contentUri.getPage(uri));
+
+		if (!qb.hasQueryLimit())
+			qb.setQueryLimit(1);
+
+		Cursor cursor = qb.query(mDatabaseHelper.getReadableDatabase());
 
 		cursor.setNotificationUri(getContext().getContentResolver(), uri);
 
@@ -431,10 +448,6 @@ public class ContentProvider extends android.content.ContentProvider {
 		return count;
 	}
 
-	protected String getQueryLimit(int pageLimit, int pageOffset) {
-		return pageLimit + " OFFSET " + (pageLimit  * pageOffset);
-	}
-
 	private class DatabaseHelper extends SQLiteOpenHelper {
 		public DatabaseHelper() {
 			super(getContext(), DATABASE_NAME, null, DATABASE_VERSION);
@@ -442,34 +455,12 @@ public class ContentProvider extends android.content.ContentProvider {
 
 		@Override
 		public void onCreate(SQLiteDatabase db) {
-
+			db.execSQL(AuthorColumns.CREATE_QUERY);
 		}
 
 		@Override
 		public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
-		}
-	}
-
-	@SuppressWarnings("serial")
-	private static class ProjectionMap extends HashMap<String, String> {
-		private String mDefaultTableName;
-
-		public ProjectionMap(String tableName) {
-			mDefaultTableName = tableName;
-		}
-
-		public void addColumn(String columnName) {
-			addColumn(columnName, mDefaultTableName);
-		}
-
-		public void addColumn(String columnName, String tableName) {
-			addColumn(columnName, tableName, columnName);
-		}
-
-		public void addColumn(String columnName, String tableName,
-				String columnAlias) {
-			put(columnAlias, tableName + "." + columnName);
 		}
 	}
 }

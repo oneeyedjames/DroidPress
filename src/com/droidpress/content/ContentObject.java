@@ -85,11 +85,8 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	public interface UriBuilder {
 		public Uri build();
 		public Uri build(long id);
+		public Uri build(long id, int page);
 		public Uri build(String slug);
-	}
-
-	protected static Uri withAppendedPath(Uri uri, String path) {
-		return uri.buildUpon().appendPath(path).build();
 	}
 
 	private Context mContext;

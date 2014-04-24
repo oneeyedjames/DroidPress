@@ -80,7 +80,15 @@ public interface ContentSchema {
 		public static final String URL   = "url";
 
 		public static final String SORT_ORDER = NAME + " ASC";
+
 		public static final int PAGE_LIMIT = 10;
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _ID + " BIGINT PRIMARY KEY AUTOINCREMENT, "
+				+ _REMOTE_ID + " BIGINT, "
+				+ NAME + " TEXT, "
+				+ EMAIL + " TEXT, "
+				+ URL + "TEXT);";
 
 		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.author";
 		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.author";
@@ -118,7 +126,25 @@ public interface ContentSchema {
 		public static final String COMMENT_STATUS_CLOSED = "closed";
 
 		public static final String SORT_ORDER = PUB_DATE + " DESC";
+
 		public static final int PAGE_LIMIT = 10;
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _ID + " BIGINT PRIMARY KEY AUTOINCREMENT, "
+				+ _REMOTE_ID + " BIGINT, "
+				+ _PARENT_ID + " BIGINT, "
+				+ _REMOTE_PARENT_ID + " BIGINT, "
+				+ _AUTHOR_ID + " BIGINT, "
+				+ _REMOTE_AUTHOR_ID + " BIGINT, "
+				+ TYPE + " TEXT, "
+				+ TITLE + " TEXT, "
+				+ EXCERPT + " TEXT, "
+				+ CONTENT + " TEXT, "
+				+ PERMALINK + " TEXT, "
+				+ STATUS + " TEXT, "
+				+ COMMENT_STATUS + " TEXT, "
+				+ PUB_DATE + " BIGINT, "
+				+ MOD_DATE + " BIGINT);";
 
 		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.post";
 		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.post";
@@ -160,7 +186,20 @@ public interface ContentSchema {
 		public static final String CONTENT = "content";
 
 		public static final String SORT_ORDER = PUB_DATE + " DESC";
+
 		public static final int PAGE_LIMIT = 25;
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _ID + " BIGINT PRIMARY KEY AUTOINCREMENT, "
+				+ _REMOTE_ID + " BIGINT, "
+				+ _PARENT_ID + " BIGINT, "
+				+ _REMOTE_PARENT_ID + " BIGINT, "
+				+ _AUTHOR_ID + " BIGINT, "
+				+ _REMOTE_AUTHOR_ID + " BIGINT, "
+				+ CONTENT + " TEXT, "
+				+ STATUS + " TEXT, "
+				+ PUB_DATE + " BIGINT, "
+				+ MOD_DATE + " BIGINT);";
 
 		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.comment";
 		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.comment";
@@ -188,6 +227,15 @@ public interface ContentSchema {
 
 		public static final String HIERARCHICAL = "hierarchical";
 
+		public static final String SORT_ORDER = TITLE + " ASC";
+
+		public static final int PAGE_LIMIT = 25;
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _ID + " BIGINT PRIMARY KEY AUTOINCREMENT, "
+				+ _REMOTE_ID + " BIGINT, "
+				+ TITLE + " TEXT);";
+
 		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.taxonomy";
 		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.taxonomy";
 
@@ -210,6 +258,17 @@ public interface ContentSchema {
 		public static final String _REMOTE_TAXONOMY_ID = "_remote_taxonomy_id";
 
 		public static final String TITLE = "title";
+
+		public static final String SORT_ORDER = TITLE + " ASC";
+
+		public static final int PAGE_LIMIT = 25;
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _ID + " BIGINT PRIMARY KEY AUTOINCREMENT, "
+				+ _REMOTE_ID + " BIGINT, "
+				+ _PARENT_ID + " BIGINT, "
+				+ _REMOTE_PARENT_ID + " BIGINT, "
+				+ TITLE + " TEXT);";
 
 		public static final String CONTENT_TYPE = "vnd.android.cursor.dir/vnd.droidpress.term";
 		public static final String CONTENT_ITEM_TYPE = "vnd.android.cursor.item/vnd.droidpress.term";
@@ -234,5 +293,9 @@ public interface ContentSchema {
 
 		public static final String _POST_ID = "_post_id";
 		public static final String _TERM_ID = "_term_id";
+
+		public static final String CREATE_QUERY = "CREATE TABLE " + TABLE_NAME + " ("
+				+ _POST_ID + " BIGINT, "
+				+ _TERM_ID + " BIGINT);";
 	}
 }

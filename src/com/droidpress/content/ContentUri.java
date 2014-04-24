@@ -63,7 +63,7 @@ public enum ContentUri implements ContentSchema, UriBuilder {
 	private static final UriMatcher sUriMatcher;
 
 	static {
-		sBaseUri = Uri.parse(String.format("%s://%s/", SCHEME, AUTHORITY));
+		sBaseUri = Uri.parse(String.format("%s://%s", SCHEME, AUTHORITY));
 
 		sUriMatcher = new UriMatcher(UriMatcher.NO_MATCH);
 	}
@@ -78,9 +78,9 @@ public enum ContentUri implements ContentSchema, UriBuilder {
 		return matchUri;
 	}
 
-	public final String path;
-	public final int keyPathPosition;
-	public final int pagePathPosition;
+	private final String path;
+	private final int keyPathPosition;
+	private final int pagePathPosition;
 
 	private ContentUri(String path) {
 		this(path, -1);
@@ -132,6 +132,15 @@ public enum ContentUri implements ContentSchema, UriBuilder {
 	@Override
 	public Uri build(long id) {
 		String path = this.path.replaceFirst("#", id + "");
+		return sBaseUri.buildUpon().appendEncodedPath(path).build();
+	}
+
+	@Override
+	public Uri build(long id, int page) {
+		String path = this.path
+				.replaceFirst("#", id + "")
+				.replaceFirst("#", page + "");
+
 		return sBaseUri.buildUpon().appendEncodedPath(path).build();
 	}
 
