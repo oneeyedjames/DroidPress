@@ -11,7 +11,6 @@ import android.database.Cursor;
 import com.droidpress.content.ContentSchema.AuthoredColumns;
 import com.droidpress.content.ContentSchema.EditableColumns;
 import com.droidpress.content.ContentSchema.NestedColumns;
-import com.droidpress.os.Executable;
 
 public abstract class AuthoredContentObject extends ContentObject
 implements EditableColumns, NestedColumns, AuthoredColumns {
@@ -47,16 +46,14 @@ implements EditableColumns, NestedColumns, AuthoredColumns {
 		return update();
 	}
 
-	public void trash(final Executable callback) {
-		new Executable() {
+	public void trash(final Runnable callback) {
+		runInBackground(new Runnable() {
 			@Override
 			public void run() {
 				trash();
-
-				if (callback != null)
-					callback.execute();
+				runOnMainThread(callback);
 			}
-		}.executeInBackground();
+		});
 	}
 
 	public boolean hasRemote() {

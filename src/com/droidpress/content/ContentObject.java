@@ -5,14 +5,16 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.Log;
-
-import com.droidpress.os.Executable;
 
 public abstract class ContentObject implements ContentSchema.BaseColumns {
 	private static final String TAG = "ContentObject";
@@ -20,11 +22,30 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	public static final int LOAD_REPLACE = 0x01;
 	public static final int LOAD_MERGE   = 0x02;
 
+	private static final Executor sExecutor;
+	private static final Handler  sHandler;
+
+	/**
+	 * May be used as baseline in child classes
+	 */
 	protected static final Map<String, FieldType> sFieldTypeMap;
 
 	static {
+		sExecutor = Executors.newCachedThreadPool();
+		sHandler  = new Handler(Looper.getMainLooper());
+
 		sFieldTypeMap = new HashMap<String, FieldType>();
 		sFieldTypeMap.put(_ID, FieldType.LONG);
+	}
+
+	protected static void runOnMainThread(Runnable action) {
+		if (action != null)
+			sHandler.post(action);
+	}
+
+	protected static void runInBackground(Runnable action) {
+		if (action != null)
+			sExecutor.execute(action);
 	}
 
 	public static final class Factory<T extends ContentObject> {
@@ -113,11 +134,8 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 
 	public ContentObject loadCursor(Cursor cursor, int mode) {
 		if (cursor != null && !cursor.isClosed()) {
-			switch (mode) {
-			case LOAD_REPLACE:
+			if (mode == LOAD_REPLACE)
 				mValues.clear();
-				break;
-			}
 
 			String fieldName;
 
@@ -167,14 +185,11 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	}
 
 	public ContentObject loadValues(ContentValues values, int mode) {
-		switch (mode) {
-		case LOAD_REPLACE:
-			mValues = values;
-			break;
-		case LOAD_MERGE:
-			mValues.putAll(values);
-			break;
-		}
+		if (mode == LOAD_REPLACE)
+			mValues.clear();
+
+		mValues.putAll(values);
+
 		return this;
 	}
 
@@ -278,28 +293,24 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		return count;
 	}
 
-	public void save(final Executable callback) {
-		new Executable() {
+	public void save(final Runnable callback) {
+		runInBackground(new Runnable() {
 			@Override
 			public void run() {
 				save();
-
-				if (callback != null)
-					callback.execute();
+				runOnMainThread(callback);
 			}
-		}.executeInBackground();
+		});
 	}
 
-	public void delete(final Executable callback) {
-		new Executable() {
+	public void delete(final Runnable callback) {
+		runInBackground(new Runnable() {
 			@Override
 			public void run() {
 				delete();
-
-				if (callback != null)
-					callback.execute();
+				runOnMainThread(callback);
 			}
-		}.executeInBackground();
+		});
 	}
 
 	protected void beforeSave() {}
@@ -333,6 +344,7 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 	public Uri getInsertUri() {
 		return getUri();
 	}
+
 
 	@Override
 	public long getId() {

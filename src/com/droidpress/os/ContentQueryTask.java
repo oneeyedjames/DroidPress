@@ -1,5 +1,8 @@
 package com.droidpress.os;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import android.content.Context;
 import android.database.Cursor;
 import android.net.Uri;
@@ -8,7 +11,7 @@ import android.os.AsyncTask;
 import com.droidpress.content.ContentObject;
 
 public class ContentQueryTask<T extends ContentObject>
-extends AsyncTask<Uri, Void, T> {
+extends AsyncTask<Uri, Void, List<T>> {
 	private Context mContext;
 	private Class<T> mContentClass;
 
@@ -20,14 +23,23 @@ extends AsyncTask<Uri, Void, T> {
 	}
 
 	@Override
-	protected T doInBackground(Uri... params) {
+	protected List<T> doInBackground(Uri... params) {
 		if (params.length > 0) {
 			Cursor cursor = query(params[0]);
 
-			ContentObject.Factory<T> factory = new ContentObject
-					.Factory<T>(mContext, mContentClass);
+			if (cursor != null) {
+				List<T> content = new LinkedList<T>();
 
-			return factory.newInstance(cursor);
+				ContentObject.Factory<T> factory = new ContentObject
+						.Factory<T>(mContext, mContentClass);
+
+				while (cursor.moveToNext())
+					content.add(factory.newInstance(cursor));
+
+				cursor.close();
+
+				return content;
+			}
 		}
 
 		return null;
