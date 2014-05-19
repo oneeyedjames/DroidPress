@@ -193,8 +193,12 @@ public abstract class ContentObject implements ContentSchema.BaseColumns {
 		return this;
 	}
 
+	public Context getContext() {
+		return mContext;
+	}
+
 	public ContentValues getValues() {
-		return mValues;
+		return new ContentValues(mValues);
 	}
 
 	@Override
